@@ -74,7 +74,9 @@
   
   $res        = $db->query($sql); 
     
-?>  <br><br><br>
+?>  
+
+    <br><br><br>
     <div id="map"></div>
     <div id="right-panel">
     <div>
@@ -208,6 +210,7 @@
                 map: map,
                 position: point,
                 label: icon.label
+
               });
               marker.addListener('click', function() {
                 infoWindow.setContent(infowincontent);
