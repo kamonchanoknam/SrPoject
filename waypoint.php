@@ -28,10 +28,11 @@
         padding: 0;
       }
       #map {
-        height: 100%;
+        height: 50%;
         float: left;
         width: 70%;
-        height: 100%;
+        height: 80%;
+
       }
       #right-panel {
         margin: 20px;
@@ -47,6 +48,18 @@
         background-color: #FFEE77;
         padding: 10px;
       }
+      #infowindow-content .title {
+        font-weight: bold;
+      }
+
+      #infowindow-content {
+        display: none;
+      }
+
+      #infowindow-content {
+        display: inline;
+        margin-top:50px;
+      }
     </style>
   </head>
   <body>
@@ -59,12 +72,9 @@
   $sql        = "SELECT * FROM temple ORDER BY Temp_name";
 
   
-  $res        = $db->query($sql);
-  
- 
-   
+  $res        = $db->query($sql); 
     
-?>
+?>  <br><br><br>
     <div id="map"></div>
     <div id="right-panel">
     <div>
@@ -111,6 +121,11 @@
     
       <input type="submit" id="submit" value="ดูเส้นทาง">
     </div>
+    <div id="infowindow-content">
+      <img src="" width="16" height="16" id="place-icon">
+      <span id="place-name"  class="title"></span><br>
+      <span id="place-address"></span>
+    </div>
     <div id="directions-panel"></div>
     </div>
     <script>
@@ -127,6 +142,22 @@
 
       var map;
 
+      function downloadUrl(url, callback) {
+        var request = window.ActiveXObject ?
+            new ActiveXObject('Microsoft.XMLHTTP') :
+            new XMLHttpRequest;
+        function doNothing() {}
+        request.onreadystatechange = function() {
+          if (request.readyState == 4) {
+            request.onreadystatechange = doNothing;
+            callback(request, request.status);
+          }
+        };
+
+        request.open('GET', url, true);
+        request.send(null);
+      }
+
 
       function initMap() {
 
@@ -142,9 +173,53 @@
         document.getElementById('submit').addEventListener('click', function() {
           calculateAndDisplayRoute(directionsService, directionsDisplay);
 
+          var customLabel = {
+            restaurant: {
+              label: 'R'
+            },
+            bar: {
+              label: 'B'
+            }
+          };
+          var infoWindow = new google.maps.InfoWindow;
+
+          downloadUrl("maps_xml.php", function(data) {
+            var xml = data.responseXML;
+            var markers = xml.documentElement.getElementsByTagName('marker');
+            Array.prototype.forEach.call(markers, function(markerElem) {
+              var name = markerElem.getAttribute('name');
+              var address = markerElem.getAttribute('address');
+              var type = markerElem.getAttribute('type');
+              var point = new google.maps.LatLng(
+                  parseFloat(markerElem.getAttribute('lat')),
+                  parseFloat(markerElem.getAttribute('lng')));
+
+              var infowincontent = document.createElement('div');
+              var strong = document.createElement('strong');
+              strong.textContent = name
+              infowincontent.appendChild(strong);
+              infowincontent.appendChild(document.createElement('br'));
+
+              var text = document.createElement('text');
+              text.textContent = address
+              infowincontent.appendChild(text);
+              var icon = customLabel[type] || {};
+              var marker = new google.maps.Marker({
+                map: map,
+                position: point,
+                label: icon.label
+              });
+              marker.addListener('click', function() {
+                infoWindow.setContent(infowincontent);
+                infoWindow.open(map, marker);
+              });
+            });
+          });
           
 
         });
+
+        
 
 
         google.maps.event.addDomListener(window, 'load', function () {
@@ -157,7 +232,7 @@
                 var mesg = "Address: " + address;
                 mesg += "\nLatitude: " + latitude;
                 mesg += "\nLongitude: " + longitude;
-                alert(mesg);
+                // alert(mesg);
             });
         });
       }
@@ -212,7 +287,7 @@
             });
           }
         }
-        alert(latitude+""+longitude);
+        // alert(latitude+""+longitude);
         // var latlng = document.getElementById('start').value.split(",");
         // var lat1 = parseFloat(latlng[0]);
         // var lng1 = parseFloat(latlng[1]);
@@ -228,7 +303,7 @@
         var latitude1 = (+latitude + (+lat2)) / 2.0;
         var longtitude1 = (+longitude + (+lng2)) / 2.0;
 
-        window.alert("latG=" + latitude + ", longG=" + longitude + ",lat=" + lat2 + ",long=" + lng2 + "C1=" + latitude1 + "C2=" + longtitude1);
+        // window.alert("latG=" + latitude + ", longG=" + longitude + ",lat=" + lat2 + ",long=" + lng2 + "C1=" + latitude1 + "C2=" + longtitude1);
 
        
         createRadius(latitude1,longtitude1,radius);
@@ -253,6 +328,7 @@
                   '</b><br>';
               summaryPanel.innerHTML += route.legs[i].start_address + ' to ';
               summaryPanel.innerHTML += route.legs[i].end_address + '<br>';
+              summaryPanel.innerHTML += route.legs[i].duration.text + '<br>';
               summaryPanel.innerHTML += route.legs[i].distance.text + '<br><br>';
             }
           } else {

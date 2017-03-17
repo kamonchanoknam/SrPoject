@@ -177,7 +177,7 @@
           zoom: 12
         });
         var infoWindow = new google.maps.InfoWindow;
-        var tempName = document.getElementById('tempName');
+        // var tempName = document.getElementById('tempName');
         var value = tempName.value;
           // Change this depending on the name of your PHP or XML file
           downloadUrl("maps_xml_test.php?tempName=".concat(value), function(data) {
