@@ -95,36 +95,35 @@
         }
         ?>
     </datalist><br><br>
+
     <input type="submit" id="submit" value="ดูเส้นทาง"><br><br>
 
     <b>เลือกวัดที่ต้องการ:</b> <br>
     <i>(Ctrl+Click สำหรับเลือกได้หลายวัด)</i> <br>
     <p id="demo"></p>
+<select multiple id="waypoints">
+  
 
-    <select multiple id="waypoints">
-      <?php
-    
-     
-      $check="<script>test1()</script>";
-      $sql        = "SELECT * FROM temple ORDER BY Temp_name";
-      $res        = $db->query($sql); 
-        while( $row = $res->fetch_object() ){
-      
-        // if(check_temple_name==$row->Temp_name) {
-           // echo "<option value='" .$row->Temp_latitude.",".$row->Temp_longitude."'>".$row->Temp_name."</option>";
-         // }
+</select>
+<script type="text/javascript">
+function create_select(){
+  var i=0;
 
-        echo "<option value='" .$row->Temp_latitude.",".$row->Temp_longitude."'>".$row->Temp_name."</option>";
-           
-       
+var y ;
 
-        }
-      ?>
-      
-    </select>
 
-      
+for (i = 0 ;i<set_name_temple.length;i++){
+      y+="<option value='"+set_name_temple[i]+"'>"+set_name_temple[i]+"</option>";
 
+}
+
+document.getElementById('waypoints').innerHTML=y;
+}
+
+</script>
+
+
+  
 
     <br><br>
     
@@ -135,10 +134,12 @@
     
     <div id="directions-panel"></div>
     </div>
+
+  
     <script>
      
       var count=0;
-      var set_name_temple;
+      var set_name_temple=[];
       var latitude;
       var longitude;
 
@@ -150,6 +151,10 @@
       var radLatLong;
       var map;
       var markerss = [];
+      var count_click;
+
+      
+
 
       function downloadUrl(url, callback) {
         var request = window.ActiveXObject ?
@@ -202,6 +207,13 @@
         directionsDisplay.setMap(map);
 
         document.getElementById('submit').addEventListener('click', function() {
+  
+          count_click+=1;
+          if(count_click!=0){
+            set_name_temple=[];
+
+          }
+
           show();
           clearMarkers();
           radLatLong= calculateAndDisplayRoute(directionsService, directionsDisplay);
@@ -246,8 +258,10 @@
               if(dist2rad<parseFloat(rad[2])){
 
                   // window.alert("radius="+rad[2]+","+dist2rad);
-                
-                  test1(name);
+               
+                set_name_temple.push(name);
+                  
+                 
                   var infowincontent = document.createElement('div');
                   var strong = document.createElement('strong');
                   strong.textContent = name;
@@ -263,6 +277,7 @@
                     position: point,
                     label: icon.label
                   });
+
                   markerss.push(marker);
                   marker.addListener('click', function() {
                     infoWindow.setContent(infowincontent);
@@ -271,10 +286,11 @@
               }
               
             });
+            create_select();
           });
           
 
-        });
+        }   );
 
         
 
@@ -400,15 +416,15 @@
     </script>
 
 <script>
-function test1(name){
-  set_name_temple=name;
-document.getElementById("demo").innerHTML = set_name_temple;
 
-}
+
+
 </script>
 
     <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC1wd_ZjcGOeUA3Z8PTTArFp2oSiCGd3KQ&sensor=false&libraries=places&callback=initMap">
     </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
   </body>
 </html>

@@ -320,4 +320,5 @@ $events = $req->fetchAll();
 	</div>
 
 </body>
+
 </html>
