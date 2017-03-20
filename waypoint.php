@@ -3,7 +3,7 @@
   <head>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
-    <title>Waypoints in directions</title>
+    <title>Planning directions</title>
     <style>
       #right-panel {
         font-family: 'Roboto','sans-serif';
@@ -83,12 +83,7 @@
     <b>จุดเริ่มต้น:</b>
     <input type="text" id="start" style="width: 250px" placeholder="Enter a location" />
 
-    <!-- <select id="start">
-      <option value="Halifax, NS">Halifax, NS</option>
-      <option value="Boston, MA">Boston, MA</option>
-      <option value="New York, NY">New York, NY</option>
-      <option value="chicago, il">Chicago</option>
-    </select> -->
+    
     <br>
     
     <b>จุดสิ้นสุด:</b><br>
@@ -100,39 +95,50 @@
         }
         ?>
     </datalist><br><br>
-    <!-- <input type="submit" id="submit" value="ค้นหาเส้นทางหลัก"><br> -->
+    <input type="submit" id="submit" value="ดูเส้นทาง"><br><br>
+
     <b>เลือกวัดที่ต้องการ:</b> <br>
     <i>(Ctrl+Click สำหรับเลือกได้หลายวัด)</i> <br>
+    <p id="demo"></p>
+
     <select multiple id="waypoints">
-      <option value="18.78824,98.96776">วัดสวนดอก</option>
-      <option value="18.80088,98.95910">วัดประทานพร</option>
-      <option value="chicago, il">Chicago</option>
-      <option value="winnipeg, mb">Winnipeg</option>
-      <option value="fargo, nd">Fargo</option>
-      <option value="calgary, ab">Calgary</option>
-      <option value="spokane, wa">Spokane</option>
+      <?php
+    
+     
+      $check="<script>test1()</script>";
+      $sql        = "SELECT * FROM temple ORDER BY Temp_name";
+      $res        = $db->query($sql); 
+        while( $row = $res->fetch_object() ){
+      
+        // if(check_temple_name==$row->Temp_name) {
+           // echo "<option value='" .$row->Temp_latitude.",".$row->Temp_longitude."'>".$row->Temp_name."</option>";
+         // }
+
+        echo "<option value='" .$row->Temp_latitude.",".$row->Temp_longitude."'>".$row->Temp_name."</option>";
+           
+       
+
+        }
+      ?>
+      
     </select>
+
+      
+
+
     <br><br>
     
-   <!--  <select id="end">
-      <option value="Vancouver, BC">Vancouver, BC</option>
-      <option value="Seattle, WA">Seattle, WA</option>
-      <option value="San Francisco, CA">San Francisco, CA</option>
-      <option value="Los Angeles, CA">Los Angeles, CA</option>
-    </select> -->
+  
     
-      <input type="submit" id="submit" value="ดูเส้นทาง">
+      
     </div>
-    <div id="infowindow-content">
-      <img src="" width="16" height="16" id="place-icon">
-      <span id="place-name"  class="title"></span><br>
-      <span id="place-address"></span>
-    </div>
+    
     <div id="directions-panel"></div>
     </div>
     <script>
-  
+     
       var count=0;
+      var set_name_temple;
       var latitude;
       var longitude;
 
@@ -141,8 +147,9 @@
       var longitude_af;
       var radius_af;
       var covered;
-
+      var radLatLong;
       var map;
+      var markerss = [];
 
       function downloadUrl(url, callback) {
         var request = window.ActiveXObject ?
@@ -160,8 +167,30 @@
         request.send(null);
       }
 
+      function setMapOnAll(map) {
+        for (var i = 0; i < markerss.length; i++) {
+          markerss[i].setMap(map);
+        }
+      }
+      function clearMarkers() {
+        setMapOnAll(null);
+      }
+      function deleteMarkers() {
+        clearMarkers();
+        markers = [];
+      }
+      function hide(){
+        var earrings = document.getElementById('waypoints');
+        earrings.style.visibility = 'hidden';
 
+}
+      function show(){
+        var earrings = document.getElementById('waypoints');
+
+        earrings.style.visibility = 'visible';
+      }
       function initMap() {
+         hide();
 
         var directionsService = new google.maps.DirectionsService;
         var directionsDisplay = new google.maps.DirectionsRenderer;
@@ -173,8 +202,10 @@
         directionsDisplay.setMap(map);
 
         document.getElementById('submit').addEventListener('click', function() {
-          calculateAndDisplayRoute(directionsService, directionsDisplay);
-
+          show();
+          clearMarkers();
+          radLatLong= calculateAndDisplayRoute(directionsService, directionsDisplay);
+          // window.alert(radLatLong);
           var customLabel = {
             restaurant: {
               label: 'R'
@@ -186,36 +217,59 @@
           var infoWindow = new google.maps.InfoWindow;
 
           downloadUrl("maps_xml.php", function(data) {
+
+
             var xml = data.responseXML;
             var markers = xml.documentElement.getElementsByTagName('marker');
+
             Array.prototype.forEach.call(markers, function(markerElem) {
+              var raddd=radLatLong;
               var name = markerElem.getAttribute('name');
               var address = markerElem.getAttribute('address');
               var type = markerElem.getAttribute('type');
               var point = new google.maps.LatLng(
                   parseFloat(markerElem.getAttribute('lat')),
-                  parseFloat(markerElem.getAttribute('lng')));
+                  parseFloat(markerElem.getAttribute('lng'))
+              );
 
-              var infowincontent = document.createElement('div');
-              var strong = document.createElement('strong');
-              strong.textContent = name
-              infowincontent.appendChild(strong);
-              infowincontent.appendChild(document.createElement('br'));
 
-              var text = document.createElement('text');
-              text.textContent = address
-              infowincontent.appendChild(text);
-              var icon = customLabel[type] || {};
-              var marker = new google.maps.Marker({
-                map: map,
-                position: point,
-                label: icon.label
+              var lat_1=parseFloat(markerElem.getAttribute('lat'));
+              var long_1=parseFloat(markerElem.getAttribute('lng'));
+              
 
-              });
-              marker.addListener('click', function() {
-                infoWindow.setContent(infowincontent);
-                infoWindow.open(map, marker);
-              });
+              var rad = raddd.split(",");
+              var dist2rad = dist(lat_1,long_1,parseFloat(rad[0]),parseFloat(rad[1]));
+
+              // window.alert("radius="+rad[2]+","+dist2rad);
+              // window.alert(lat_1+" , "+long_1+" , ");
+
+              if(dist2rad<parseFloat(rad[2])){
+
+                  // window.alert("radius="+rad[2]+","+dist2rad);
+                
+                  test1(name);
+                  var infowincontent = document.createElement('div');
+                  var strong = document.createElement('strong');
+                  strong.textContent = name;
+                  
+                  infowincontent.appendChild(strong);
+                  infowincontent.appendChild(document.createElement('br'));
+                  var text = document.createElement('text');
+                  text.textContent = address
+                  infowincontent.appendChild(text);
+                  var icon = customLabel[type] || {};
+                  var marker = new google.maps.Marker({
+                    map: map,
+                    position: point,
+                    label: icon.label
+                  });
+                  markerss.push(marker);
+                  marker.addListener('click', function() {
+                    infoWindow.setContent(infowincontent);
+                    infoWindow.open(map, marker);
+                  });
+              }
+              
             });
           });
           
@@ -264,22 +318,24 @@
 
         count=count+1;
    }
-      function dist($lat1, $long1, $lat2, $long2) {
-          $pi = Math.PI;
-          $dist = 0;
+      function dist(lat1, long1, lat2, long2) {
+          var pi = Math.PI;
+          var dist = 0;
 
-          $theta = $long1 - $long2;
-          $dist = Math.sin($lat1 * $pi / 180) * Math.sin($lat2 * $pi / 180) + Math.cos($lat1 * $pi / 180) * Math.cos($lat2 * $pi / 180) * Math.cos($theta * $pi / 180);
-          $dist = Math.acos($dist);
-          $dist = ($dist * 180) / $pi;
-          $dist = $dist * 60 * 1.1515 * 1.609344; //Km.
+          var theta = long1 - long2;
+          dist = Math.sin(lat1 * pi / 180) * Math.sin(lat2 * pi / 180) + Math.cos(lat1 * pi / 180) * Math.cos(lat2 * pi / 180) * Math.cos(theta * pi / 180);
+          dist = Math.acos(dist);
+          dist = (dist * 180) / pi;
+          dist = dist * 60 * 1.1515 * 1.609344; //Km.
 
-          return $dist;
+          return dist;
       }
       
 
       function calculateAndDisplayRoute(directionsService, directionsDisplay) {
+        
         var waypts = [];
+
         var checkboxArray = document.getElementById('waypoints');
 
         for (var i = 0; i < checkboxArray.length; i++) {
@@ -302,7 +358,7 @@
 
 
         var distance = dist(latitude, longitude, lat2, lng2);
-        var radius = distance / 2;
+        var radius = (+distance) / 2.0 ;
         var latitude1 = (+latitude + (+lat2)) / 2.0;
         var longtitude1 = (+longitude + (+lng2)) / 2.0;
 
@@ -315,7 +371,7 @@
         directionsService.route({
           origin: document.getElementById('start').value,
           destination: document.getElementById('end').value,
-          waypoints: waypts,
+         waypoints: waypts,
           optimizeWaypoints: true,
           travelMode: 'DRIVING'
         }, function(response, status) {
@@ -338,8 +394,19 @@
             window.alert('Directions request failed due to ' + status);
           }
         });
+        var text=latitude1+","+longtitude1+","+radius;
+        return text;
       }
     </script>
+
+<script>
+function test1(name){
+  set_name_temple=name;
+document.getElementById("demo").innerHTML = set_name_temple;
+
+}
+</script>
+
     <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC1wd_ZjcGOeUA3Z8PTTArFp2oSiCGd3KQ&sensor=false&libraries=places&callback=initMap">
     </script>
